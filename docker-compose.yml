@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+ zookeeper:
+    image: 'apachepulsar/pulsar-zookeeper:latest'
+    ports:
+      - '2181:2181'
+
+ bookkeeper:
+    image: 'apachepulsar/pulsar-bookkeeper:latest'
+    ports:
+      - '3181:3181'
+    environment:
+      - BOOKIE_PORT=3181
+      - BOOKIE_ZOOKEEPER_CONNECT_STRING=zookeeper:2181
+
+ broker:
+    image: 'apachepulsar/pulsar:latest'
+    ports:
+      - '6650:6650' # Pulsar
+      - '8080:8080' # Pulsar dashboard
+      - "1883:1883" # MQTT
+    environment:
+      - PULSAR_BROKER_BOOKIE_PORT=3181
+      - PULSAR_BROKER_ZOOKEEPER_CONNECT_STRING=zookeeper:2181
+      - PULSAR_BROKER_WEB_PORT=8080
+    command: bin/pulsar broker
+    volumes:
+      - "./protocols:/pulsar/protocols"
+      - "./conf:/pulsar/conf"
+
+ pulsar-manager:
+    image: 'apachepulsar/pulsar-manager:latest'
+    ports:
+      - '9527:9527'
+    environment:
+      - PULSAR_MANAGER_BROKER_URL=http://broker:8080
+      - PULSAR_MANAGER_BOOKIE_URL=http://bookkeeper:3181
+      - PULSAR_MANAGER_ZOOKEEPER_URL=zookeeper:2181
+    command: /pulsar-manager/bin/pulsar-manager
